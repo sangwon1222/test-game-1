@@ -17,6 +17,7 @@
       "@/*": ["*"],
       "@views/*": ["app/views/*"],
       "@core/*": ["app/core/*"],
+      "@game/*": ["app/core/game/*"],
       "@components/*": ["components/*"]
     },
     "jsx": "react-jsx",

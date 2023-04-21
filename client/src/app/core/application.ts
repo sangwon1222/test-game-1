@@ -1,9 +1,29 @@
 import * as PIXI from 'pixi.js';
 import SceneManager from '@core/sceneManager';
+import ModalManager from '@core/modalManager';
+import config from '../config';
 
-export default class application extends PIXI.Application {
-  private sceneManager: SceneManager;
-  private modalManager: PIXI.Container;
+const params = {
+  backgroundColor: config.background,
+  width: config.width,
+  height: config.height,
+};
+
+export default class Application extends PIXI.Application {
+  private static handle: Application;
+  static get getHandle(): Application {
+    return Application.handle ? Application.handle : new Application(params);
+  }
+
+  get getSceneManager(): SceneManager {
+    return this.mSceneManager;
+  }
+  get getModalManager(): ModalManager {
+    return this.mModalManager;
+  }
+
+  private mSceneManager: SceneManager;
+  private mModalManager: ModalManager;
   constructor({
     width,
     height,
@@ -18,19 +38,23 @@ export default class application extends PIXI.Application {
       height,
       backgroundColor,
     });
-    this.sceneManager = new SceneManager();
-    this.modalManager = new PIXI.Container();
+    Application.handle = this;
+    this.mSceneManager = new SceneManager();
+    this.mModalManager = new ModalManager();
   }
 
   async init() {
     this.stage.removeChildren();
-    this.sceneManager = new SceneManager();
-    this.modalManager = new PIXI.Container();
+    this.mSceneManager = new SceneManager();
+    this.mModalManager = new ModalManager();
     this.stage.sortableChildren = true;
-    this.sceneManager.zIndex = 1;
-    this.modalManager.zIndex = 2;
+    this.mSceneManager.zIndex = 1;
+    this.mModalManager.zIndex = 2;
 
-    await this.sceneManager.init();
-    await this.sceneManager.startGame();
+    this.stage.addChild(this.mSceneManager, this.mModalManager);
+
+    await this.mModalManager.init();
+    await this.mSceneManager.init();
+    await this.mSceneManager.startGame();
   }
 }
