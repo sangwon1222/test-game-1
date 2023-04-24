@@ -18,6 +18,7 @@ export default {
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   ],
+  speed: 0.1,
   rscList: [
     // png
     { key: 'bomb.png', src: 'rsc/img/bomb.png' },
@@ -27,7 +28,10 @@ export default {
     // gif
     { key: 'bomb.gif', src: 'rsc/img/bomb.gif' },
     { key: 'cha-wait.gif', src: 'rsc/img/cha-wait.gif' },
+    { key: 'cha-l.gif', src: 'rsc/img/cha-l.gif' },
     { key: 'cha-r.gif', src: 'rsc/img/cha-r.gif' },
+    { key: 'cha-up.gif', src: 'rsc/img/cha-up.gif' },
     { key: 'cha-down.gif', src: 'rsc/img/cha-down.gif' },
+    { key: 'cha-bombing.gif', src: 'rsc/img/cha-bombing.gif' },
   ],
 };

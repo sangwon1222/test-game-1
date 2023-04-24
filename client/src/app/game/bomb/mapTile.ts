@@ -11,21 +11,8 @@ import BomBerScene from './scene';
 export class Tile extends PIXI.Sprite {
   constructor(isActive: boolean, pos: { x: number; y: number }) {
     super();
-    this.interactive = isActive;
-    this.cursor = 'pointer';
     const rsc = isActive ? 'grass' : 'wall';
     const texturePath = rscManager.getHandle.getRsc(`${rsc}.png`);
     this.texture = new PIXI.Texture(texturePath);
-
-    if (isActive) this.init();
-  }
-
-  async init() {
-    const map = config.mapData;
-    this.on('pointerdown', (e) => {
-      e.preventDefault();
-      console.log(this.x, this.y);
-      (this.parent.parent as BomBerScene).moveCharacter(this.x, this.y);
-    });
   }
 }

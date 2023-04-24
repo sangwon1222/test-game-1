@@ -4,6 +4,11 @@ import { Tile } from './mapTile';
 import config from './config';
 
 export default class Map extends PIXI.Container {
+  private mMapData: any = config.mapData;
+
+  get mapData() {
+    return this.mMapData;
+  }
   constructor() {
     super();
   }
@@ -14,7 +19,7 @@ export default class Map extends PIXI.Container {
 
   async changeMap() {
     this.removeChildren();
-    const map = config.mapData;
+    const map = this.mMapData;
     for (let y = 0; y < map.length; y++) {
       for (let x = 0; x < map[0].length; x++) {
         const isActive = !map[y][x];

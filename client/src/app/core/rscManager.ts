@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import '@pixi/gif';
-import { config } from './config';
+import Application from './application';
 
 interface TypeSrcInfo {
   key: string;
@@ -38,7 +38,9 @@ export class rscManager {
     common?: boolean,
     sceneName?: string
   ) {
-    const scene = sceneName ? sceneName : config.currentScene;
+    const currentSceneName =
+      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
+    const scene = sceneName ? sceneName : currentSceneName;
     const rscKey = common ? `common/${key}` : `${scene}/${key}`;
 
     if (this.mRscArry[rscKey]) return;
@@ -50,7 +52,8 @@ export class rscManager {
    * @description 배열로 리소스 리스트를 보내주면 모든 리소스 로드하는 함수
    */
   public async loadAllRsc(rscInfoAry: TypeSrcInfo[]) {
-    const sceneName = config.currentScene;
+    const sceneName =
+      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
     for (const { key, src, common } of rscInfoAry) {
       await this.loadRsc(key, src, common, sceneName);
     }
@@ -62,7 +65,8 @@ export class rscManager {
    * @returns
    */
   public getRsc(srcKey: string, common?: boolean) {
-    const sceneName = config.currentScene;
+    const sceneName =
+      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
     const key = common ? `common/${srcKey}` : `${sceneName}/${srcKey}`;
 
     return this.mRscArry[key];

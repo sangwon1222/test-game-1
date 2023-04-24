@@ -1,7 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AppWrap from '@views/app';
+import { useEffect } from 'react';
+import util from './game/common';
 
 export function App() {
+  useEffect(() => {
+    util.mouseRight = () => null;
+    document.addEventListener('contextmenu', function (event) {
+      // util?.mouseRight ? util.mouseRight(event) : null;
+      event.preventDefault();
+    });
+  }, []);
+
   return (
     <Router>
       <Routes>

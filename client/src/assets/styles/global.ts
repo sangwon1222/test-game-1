@@ -29,6 +29,13 @@ footer, header, hgroup, menu, nav, section {
 body {
 	overflow: hidden;
 	line-height: 1;
+	/* 우클릭 메뉴를 숨기는 스타일 */
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* 일반적인 스타일 */
 }
 ol, ul {
 	list-style: none;

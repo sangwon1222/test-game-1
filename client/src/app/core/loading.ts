@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { config } from './config';
+import Application from './application';
 
 export default class Loading extends PIXI.Container {
   private mLoadingDots: Array<PIXI.Graphics>;
@@ -12,8 +12,10 @@ export default class Loading extends PIXI.Container {
     console.log(`%c welcome...`, 'padding:10px; color: #ff00ff;');
   }
   async end() {
+    const currentScene =
+      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
     console.log(
-      `%c complete-loading [${config.currentScene}]`,
+      `%c complete-loading [${currentScene}]`,
       'padding:10px; background: #000;color:#fff'
     );
   }

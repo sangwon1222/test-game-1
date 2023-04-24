@@ -6,25 +6,48 @@ import Map from './map';
 import config from '@/app/game/bomb/config';
 import { io, Socket } from 'socket.io-client';
 import gsap from 'gsap';
+import { util } from '../common/util';
+import { DirectionManager } from './directionManager';
 
 export default class BomBerScene extends Scene {
   private mMyId: number | null = null;
   private mMe: BomBer;
+  private mMeMotion: gsap.core.Timeline | null = null;
   private mCharacters: any;
   private mMap: Map;
   private mSocket: Socket | null = null;
+  private moveFlag = false;
+
+  get getMePos() {
+    const { x, y } = util.getCanvasPos(this.mMe.x, this.mMe.y);
+    return { x, y };
+  }
   constructor(idx: number, sceneName: string) {
     super(idx, sceneName);
 
     this.mMe = new BomBer('cha');
     this.mMap = new Map();
     this.mCharacters = {};
+    this.mMeMotion = null;
   }
 
   async startGame() {
     await this.loading();
     await this.createObject();
     await this.connectSocket();
+
+    const cb = () => {
+      DirectionManager.getHandle.updateDirection();
+      const direction = DirectionManager.getHandle.direction;
+      const space = DirectionManager.getHandle.onSpace;
+      this.mMe.setDirection(direction);
+      if (space) this.mMe.bomb();
+
+      requestAnimationFrame(() => cb());
+    };
+    requestAnimationFrame(() => {
+      cb();
+    });
   }
 
   async loading() {
@@ -34,8 +57,10 @@ export default class BomBerScene extends Scene {
   async createObject() {
     await this.mMap.init();
     await this.mMe.init();
-    this.mMe.position.set(config.tileScale, config.tileScale);
+    this.sortableChildren = true;
     this.addChild(this.mMap, this.mMe);
+    this.mMap.zIndex = 1;
+    this.mMe.zIndex = 2;
   }
 
   async connectSocket() {
@@ -55,6 +80,7 @@ export default class BomBerScene extends Scene {
           console.log('내정보', userinfo);
         } else {
           this.mCharacters[`${userinfo.id}`] = charac;
+          charac.zIndex = 2;
           this.addChild(charac);
         }
       }
@@ -66,33 +92,33 @@ export default class BomBerScene extends Scene {
 
     this.mSocket.on('move', ({ id, paths }: { id: number; paths: any }) => {
       const target = this.mCharacters[id] ? this.mCharacters[id] : this.mMe;
-      const motion = gsap.timeline();
-      for (const pos of paths) {
-        motion.to(target, {
-          x: pos[0] * config.tileScale,
-          y: pos[1] * config.tileScale,
+      if (this.mMeMotion) this.mMeMotion.kill();
+      this.mMeMotion = gsap.timeline();
+      const { length } = paths;
+      for (let i = 0; i < length; i++) {
+        this.mMeMotion.to(target, {
+          x: paths[i][0] * config.tileScale,
+          y: paths[i][1] * config.tileScale,
           duration: 0.1,
           onStart: () => {
-            console.log(target.position);
-            target.position.set(pos[0], pos[1]);
+            let status = 'wait';
+            const x = paths[i][0];
+            const y = paths[i][1];
+            if (i > 0) {
+              const prevx = paths[i - 1][0];
+              const prevy = paths[i - 1][1];
+              if (prevx > x) status = 'left';
+              else if (prevx < x) status = 'right';
+              else if (prevy < y) status = 'down';
+              else if (prevy > y) status = 'up';
+            }
+            if (i === length - 1) status = 'wait';
+            target.position.set(x, y);
+            this.mMe.chageStatus(status);
           },
         });
       }
     });
-  }
-
-  async moveCharacter(x: number, y: number) {
-    const mypos = this.metrixPos(this.mMe.x, this.mMe.y);
-    const despos = this.metrixPos(x, y);
-    this.mSocket?.emit('moveReq', {
-      id: this.mMyId,
-      startPos: mypos,
-      endPos: despos,
-    });
-  }
-
-  metrixPos(x: number, y: number) {
-    return { x: x / config.tileScale, y: y / config.tileScale };
   }
 
   // async endGame() {

@@ -1,7 +1,6 @@
 import * as PIXI from 'pixi.js';
 import Scene from '@core/scene';
 import BomBerScene from '@/app/game/bomb/scene';
-import { config } from './config';
 import Application from './application';
 
 export default class SceneManager extends PIXI.Container {
@@ -35,7 +34,6 @@ export default class SceneManager extends PIXI.Container {
     for (let i = 0; i < this.sceneAry.length; i++) {
       const { sceneName } = this.sceneAry[i].sceneInfo;
       if (goSceneName === sceneName) {
-        config.currentScene = this.sceneAry[i].sceneInfo.sceneName;
         this.addChild(this.sceneAry[i]);
         await this.sceneAry[i].startGame();
         await Application.getHandle.getModalManager.loadingEnd();
