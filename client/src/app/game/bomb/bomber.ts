@@ -1,19 +1,20 @@
 import { rscManager } from '@/app/core/rscManager';
 import { AnimatedGIF } from '@pixi/gif';
 import * as PIXI from 'pixi.js';
-import { DirectionType, GifObjectType } from '../common/index';
-import { Bomb } from './bomb';
+import util, { DirectionType, GifObjectType } from '../common/index';
+import { Bomb, PlatBomb } from './bomb';
 import BomBerScene from './scene';
 import config from './config';
 import { gsap } from 'gsap';
 
 export default class BomBer extends PIXI.Container {
-  private mName: string;
+  private mItemLayout: PIXI.Container;
+  private mCharacterLayout: PIXI.Container;
   private mGifSprite: GifObjectType;
   private mStatus = 'wait';
-  private mSetTimeOut: NodeJS.Timeout | null = null;
   private mBombArray: Array<Bomb>;
-  private mAry = [];
+  private mFixBombCnt: number;
+  private mUseBombCnt: number;
   private isMoving = false;
   private mIsBombing: boolean;
 
@@ -21,16 +22,21 @@ export default class BomBer extends PIXI.Container {
     return this.mBombArray;
   }
 
-  constructor(name: string) {
+  constructor(name: string, fixBomb = 5) {
     super();
-    this.mName = name;
+
+    this.mFixBombCnt = fixBomb;
+    this.mUseBombCnt = 0;
+
+    this.mItemLayout = new PIXI.Container();
+    this.mCharacterLayout = new PIXI.Container();
+    this.sortableChildren = true;
+    this.mItemLayout.zIndex = 2;
+    this.mCharacterLayout.zIndex = 1;
+    this.addChild(this.mItemLayout, this.mCharacterLayout);
     this.mGifSprite = {};
     this.mBombArray = [];
     this.mIsBombing = false;
-  }
-
-  async init() {
-    const name = this.mName;
     this.mGifSprite = {
       wait: rscManager.getHandle.getRsc(`${name}-wait.gif`) as AnimatedGIF,
       left: rscManager.getHandle.getRsc(`${name}-l.gif`) as AnimatedGIF,
@@ -45,87 +51,124 @@ export default class BomBer extends PIXI.Container {
   }
 
   chageStatus(status: string) {
-    if (this.mSetTimeOut) {
-      clearTimeout(this.mSetTimeOut);
-      this.mSetTimeOut = null;
-    }
-    this.removeChildren();
     this.mStatus = status;
-    this.addChild(this.mGifSprite[status]);
+
+    switch (status) {
+      case 'bomb':
+        this.mItemLayout.removeChildren();
+        this.mItemLayout.addChild(new PlatBomb());
+        break;
+      case 'plantedBomb':
+        this.mItemLayout.removeChildren();
+        break;
+      default:
+        this.mCharacterLayout.removeChildren();
+        this.mCharacterLayout.addChild(this.mGifSprite[status]);
+        break;
+    }
   }
 
-  bomb() {
-    this.chageStatus('bomb');
-    this.mSetTimeOut = setTimeout(() => {
-      if (this.mStatus === 'bomb') this.chageStatus('wait');
-      this.mSetTimeOut = null;
-    }, 500);
+  async bomb() {
+    this.chageStatus('plantedBomb');
+    const metrix = util.getMetrixPos(this.x, this.y);
+    const canvas = {
+      x: metrix.x * config.tileScale,
+      y: metrix.y * config.tileScale,
+    };
 
-    console.log(this.mIsBombing);
-    console.log(this.x, this.y);
+    if (config.mapData[metrix.y][metrix.x] === 1) return;
+
+    if (this.mIsBombing || this.mUseBombCnt >= this.mFixBombCnt) return;
+    this.mUseBombCnt += 1;
     this.mIsBombing = true;
-    if (this.mIsBombing) return;
 
     const bomb = new Bomb();
-    const scene = this.parent as BomBerScene;
-    bomb.position.set(this.x, this.y);
-    scene.addChild(bomb);
+    bomb.position.set(canvas.x, canvas.y);
+    bomb.setGlobalPos = { x: canvas.x, y: canvas.y };
+    bomb.zIndex = 2;
     this.mBombArray.push(bomb);
+
+    const scene = this.parent as BomBerScene;
+    scene.addChild(bomb);
+
     this.mIsBombing = false;
+    await bomb.plantedBomb();
   }
 
-  setDirection(direction: DirectionType) {
-    if (direction.wait) {
-      this.chageStatus('wait');
-      this.isMoving = false;
+  reduceBombCnt() {
+    for (let i = 0; i < this.mBombArray.length; i++) {
+      const { isAlive } = this.mBombArray[i];
+      if (!isAlive) this.mBombArray.splice(i, 1);
     }
+    this.mUseBombCnt = this.mBombArray.length;
+  }
 
+  async setDirection(direction: DirectionType) {
     if (this.isMoving) return;
+
     this.isMoving =
       direction.up || direction.down || direction.left || direction.right;
 
+    const { tileScale } = config;
     if (direction.up) {
       this.chageStatus('up');
-      this.move({ y: this.y - config.tileScale });
+      await this.move(0, this.y - tileScale, 'col');
     }
     if (direction.down) {
       this.chageStatus('down');
-      this.move({ y: this.y + config.tileScale });
+      await this.move(0, this.y + tileScale, 'col');
     }
     if (direction.left) {
       this.chageStatus('left');
-      this.move({ x: this.x - config.tileScale });
+      await this.move(this.x - tileScale, 0, 'row');
     }
     if (direction.right) {
       this.chageStatus('right');
-      this.move({ x: this.x + config.tileScale });
+      await this.move(this.x + tileScale, 0, 'row');
     }
   }
 
-  move({ x, y }: { x?: number; y?: number }) {
-    const posx = x ? x : null;
-    const posy = y ? y : null;
+  setAlive(alive: boolean) {
+    if (alive) return;
+    this.setAlive = () => null;
+    this.death();
+  }
 
-    if (posx) {
-      gsap.to(this, {
-        x: posx,
-        duration: config.speed,
-        ease: 'none',
-        onComplete: () => {
-          this.isMoving = false;
-        },
-      });
-    }
+  async move(x: number, y: number, direction: string) {
+    const gsapOpt: { [key: string]: any } = {
+      x,
+      y,
+      duration: config.speed,
+      ease: 'none',
+      onComplete: async () => {
+        this.isMoving = false;
+      },
+    };
 
-    if (posy) {
-      gsap.to(this, {
-        y: posy,
-        duration: config.speed,
-        ease: 'none',
-        onComplete: () => {
-          this.isMoving = false;
-        },
-      });
+    if (direction === 'row') {
+      delete gsapOpt.y;
+    } else {
+      delete gsapOpt.x;
     }
+    gsap.to(this, gsapOpt);
+  }
+
+  async checkStatus() {
+    const { mapData, tileScale } = config;
+    const { x, y } = util.getCanvasPos(this.x, this.y);
+    // console.log(x, y);
+    const metrix = { x: x / tileScale, y: y / tileScale };
+    if (mapData[metrix.y][metrix.x] === 1) {
+      console.log(x, y);
+      gsap.killTweensOf(this);
+      this.position.set(x, y);
+      return false;
+    }
+    return true;
+  }
+
+  death() {
+    console.error('death');
+    (this.setDirection as any) = () => null;
   }
 }

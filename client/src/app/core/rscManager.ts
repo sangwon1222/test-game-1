@@ -1,6 +1,7 @@
+import Application from './application';
+import { AnimatedGIF } from '@pixi/gif';
 import * as PIXI from 'pixi.js';
 import '@pixi/gif';
-import Application from './application';
 
 interface TypeSrcInfo {
   key: string;
@@ -9,9 +10,13 @@ interface TypeSrcInfo {
   sceneName?: string;
 }
 
+interface TypeRscList {
+  [key: string]: any;
+}
+
 export class rscManager {
   private static handle: rscManager;
-  private mRscArry: Record<string, never>;
+  private mRscArry: TypeRscList;
 
   static get getHandle(): rscManager {
     const handle = rscManager.handle ? rscManager.handle : new rscManager();
@@ -45,6 +50,7 @@ export class rscManager {
 
     if (this.mRscArry[rscKey]) return;
     PIXI.Assets.add(rscKey, src);
+
     this.mRscArry[rscKey] = await PIXI.Assets.load(src);
   }
 
@@ -69,6 +75,7 @@ export class rscManager {
       Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
     const key = common ? `common/${srcKey}` : `${sceneName}/${srcKey}`;
 
-    return this.mRscArry[key];
+    const clone = this.mRscArry[key].clone();
+    return clone;
   }
 }

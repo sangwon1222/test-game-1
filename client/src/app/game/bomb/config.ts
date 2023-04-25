@@ -24,6 +24,7 @@ export default {
     { key: 'bomb.png', src: 'rsc/img/bomb.png' },
     { key: 'wall.png', src: 'rsc/img/wall.png' },
     { key: 'grass.png', src: 'rsc/img/grass.png' },
+    { key: 'fire-bomb.png', src: 'rsc/img/fire-bomb.png' },
 
     // gif
     { key: 'bomb.gif', src: 'rsc/img/bomb.gif' },

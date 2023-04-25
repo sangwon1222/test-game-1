@@ -7,6 +7,10 @@ export default class SceneManager extends PIXI.Container {
   private sceneAry: Array<Scene>;
   private sceneIdx: number;
 
+  get currentScene() {
+    return this.sceneAry[this.sceneIdx];
+  }
+
   get currentSceneInfo() {
     return this.sceneAry[this.sceneIdx].sceneInfo;
   }

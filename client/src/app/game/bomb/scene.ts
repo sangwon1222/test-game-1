@@ -1,52 +1,79 @@
+import { DirectionManager } from './directionManager';
 import bomberConfig from '@/app/game/bomb/config';
 import { rscManager } from '@core/rscManager';
+import { util } from '../common/util';
 import Scene from '@core/scene';
 import BomBer from './bomber';
 import Map from './map';
-import config from '@/app/game/bomb/config';
-import { io, Socket } from 'socket.io-client';
-import gsap from 'gsap';
-import { util } from '../common/util';
-import { DirectionManager } from './directionManager';
+import Application from '@/app/core/application';
+import { BomBerObjectType } from '../common';
 
 export default class BomBerScene extends Scene {
-  private mMyId: number | null = null;
-  private mMe: BomBer;
-  private mMeMotion: gsap.core.Timeline | null = null;
-  private mCharacters: any;
-  private mMap: Map;
-  private mSocket: Socket | null = null;
-  private moveFlag = false;
+  private mMyId!: number;
+  private mMe!: BomBer;
+  private mMap!: Map;
+  private mAnotherUser: BomBerObjectType;
+
+  get getMe() {
+    return this.mMe;
+  }
 
   get getMePos() {
-    const { x, y } = util.getCanvasPos(this.mMe.x, this.mMe.y);
+    const { x, y } = util.getMetrixPos(this.mMe.x, this.mMe.y);
     return { x, y };
   }
+
   constructor(idx: number, sceneName: string) {
     super(idx, sceneName);
+    this.useKeyboard = true;
+    this.mAnotherUser = {};
+  }
 
-    this.mMe = new BomBer('cha');
-    this.mMap = new Map();
-    this.mCharacters = {};
-    this.mMeMotion = null;
+  async keydownEvent(e: KeyboardEvent) {
+    if (e.key === ' ') this.mMe.chageStatus('bomb');
+  }
+  async keyupEvent(e: KeyboardEvent) {
+    if (e.key === ' ') this.mMe.bomb();
   }
 
   async startGame() {
     await this.loading();
     await this.createObject();
-    await this.connectSocket();
 
-    const cb = () => {
-      DirectionManager.getHandle.updateDirection();
-      const direction = DirectionManager.getHandle.direction;
-      const space = DirectionManager.getHandle.onSpace;
-      this.mMe.setDirection(direction);
-      if (space) this.mMe.bomb();
-
+    const cb = async () => {
+      const { direction } = DirectionManager.getHandle;
+      await this.mMe.setDirection(direction);
       requestAnimationFrame(() => cb());
     };
-    requestAnimationFrame(() => {
-      cb();
+
+    requestAnimationFrame(() => cb());
+
+    const socket = Application.getHandle.socket;
+    socket.on('welcome', (info: any) => {
+      console.log('welcome', info);
+    });
+
+    socket.on('entertUser', (id: number) => {
+      console.log('entertUser', id);
+      if (id === this.mMyId) {
+        console.log('my id', id);
+      } else {
+        this.mAnotherUser[id] = new BomBer('cha', 5);
+        this.addChild(this.mAnotherUser[id]);
+      }
+    });
+
+    socket.on('leaveUser', (id: number) => {
+      console.log('leaveUser', id);
+      if (id === this.mMyId) {
+        console.log('my id', id);
+      } else {
+        this.removeChild(this.mAnotherUser[id]);
+        delete this.mAnotherUser[id];
+      }
+    });
+    socket.on('move', ({ id, paths }: { id: number; paths: any }) => {
+      console.log('move', { id, paths });
     });
   }
 
@@ -55,70 +82,13 @@ export default class BomBerScene extends Scene {
   }
 
   async createObject() {
+    this.mMe = new BomBer('cha');
+    this.mMap = new Map();
     await this.mMap.init();
-    await this.mMe.init();
     this.sortableChildren = true;
     this.addChild(this.mMap, this.mMe);
     this.mMap.zIndex = 1;
     this.mMe.zIndex = 2;
-  }
-
-  async connectSocket() {
-    this.mSocket = io('ws://localhost:3000', {});
-
-    this.mSocket.on('welcome', (info: any) => {
-      this.mMyId = info.id;
-
-      for (const userinfo of info.users) {
-        const charac = new BomBer('cha');
-        charac.position.set(
-          userinfo.pos[0] * config.tileScale,
-          userinfo.pos[1] * config.tileScale
-        );
-
-        if (this.mMyId === userinfo.id) {
-          console.log('내정보', userinfo);
-        } else {
-          this.mCharacters[`${userinfo.id}`] = charac;
-          charac.zIndex = 2;
-          this.addChild(charac);
-        }
-      }
-    });
-
-    this.mSocket.on('entertUser', (id: number) => {
-      console.log('entertUser', id);
-    });
-
-    this.mSocket.on('move', ({ id, paths }: { id: number; paths: any }) => {
-      const target = this.mCharacters[id] ? this.mCharacters[id] : this.mMe;
-      if (this.mMeMotion) this.mMeMotion.kill();
-      this.mMeMotion = gsap.timeline();
-      const { length } = paths;
-      for (let i = 0; i < length; i++) {
-        this.mMeMotion.to(target, {
-          x: paths[i][0] * config.tileScale,
-          y: paths[i][1] * config.tileScale,
-          duration: 0.1,
-          onStart: () => {
-            let status = 'wait';
-            const x = paths[i][0];
-            const y = paths[i][1];
-            if (i > 0) {
-              const prevx = paths[i - 1][0];
-              const prevy = paths[i - 1][1];
-              if (prevx > x) status = 'left';
-              else if (prevx < x) status = 'right';
-              else if (prevy < y) status = 'down';
-              else if (prevy > y) status = 'up';
-            }
-            if (i === length - 1) status = 'wait';
-            target.position.set(x, y);
-            this.mMe.chageStatus(status);
-          },
-        });
-      }
-    });
   }
 
   // async endGame() {

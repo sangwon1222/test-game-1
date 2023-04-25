@@ -9,7 +9,7 @@ export default class Loading extends PIXI.Container {
   }
 
   async start() {
-    console.log(`%c welcome...`, 'padding:10px; color: #ff00ff;');
+    //
   }
   async end() {
     const currentScene =
