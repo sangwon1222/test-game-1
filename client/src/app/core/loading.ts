@@ -12,8 +12,7 @@ export default class Loading extends PIXI.Container {
     //
   }
   async end() {
-    const currentScene =
-      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
+    const currentScene = Application.getHandle.getScene.sceneInfo.sceneName;
     console.log(
       `%c complete-loading [${currentScene}]`,
       'padding:10px; background: #000;color:#fff'

@@ -5,170 +5,173 @@ import util, { DirectionType, GifObjectType } from '../common/index';
 import { Bomb, PlatBomb } from './bomb';
 import BomBerScene from './scene';
 import config from './config';
-import { gsap } from 'gsap';
+import Application from '@/app/core/application';
+
+const { tileScale } = config;
 
 export default class BomBer extends PIXI.Container {
   private mItemLayout: PIXI.Container;
   private mCharacterLayout: PIXI.Container;
-  private mGifSprite: GifObjectType;
-  private mStatus = 'wait';
-  private mBombArray: Array<Bomb>;
+  private mItems: { [key: string]: PIXI.Sprite };
+  private mGifSprite!: GifObjectType;
   private mFixBombCnt: number;
   private mUseBombCnt: number;
-  private isMoving = false;
-  private mIsBombing: boolean;
+  private mIsMoving: boolean;
+  private mSocketId: string;
+  private mWaitBomb: number;
+  private mBombFire: number;
+  private mInitData: { name: string; pos: number[]; status: string };
+  private mIsAlive = true;
 
-  get bombArray() {
-    return this.mBombArray;
+  private get scene() {
+    return Application.getHandle.getScene as BomBerScene;
   }
 
-  constructor(name: string, fixBomb = 5) {
-    super();
+  get invalidBomb(): boolean {
+    return this.mFixBombCnt <= this.mUseBombCnt;
+  }
 
+  get waitBomb(): number {
+    return this.mWaitBomb;
+  }
+  set waitBomb(v: number) {
+    this.mWaitBomb = v;
+  }
+
+  get bombFire(): number {
+    return this.mBombFire;
+  }
+  set bombFire(v: number) {
+    this.mBombFire = v;
+  }
+
+  set isMoving(value: boolean) {
+    this.mIsMoving = value;
+  }
+
+  set useBomb(value: number) {
+    this.mUseBombCnt += 1;
+  }
+
+  constructor(
+    name: string,
+    socketId: string,
+    status: string,
+    pos: number[],
+    bombFire = 3,
+    waitBomb = 2,
+    fixBomb = 5
+  ) {
+    super();
+    this.mWaitBomb = waitBomb;
+    this.mBombFire = bombFire;
+    this.mInitData = { name, pos, status };
+    this.mSocketId = socketId;
+    this.mIsMoving = false;
     this.mFixBombCnt = fixBomb;
     this.mUseBombCnt = 0;
+    this.mItems = { bomb: new PlatBomb() };
 
+    this.sortableChildren = true;
     this.mItemLayout = new PIXI.Container();
     this.mCharacterLayout = new PIXI.Container();
-    this.sortableChildren = true;
     this.mItemLayout.zIndex = 2;
     this.mCharacterLayout.zIndex = 1;
     this.addChild(this.mItemLayout, this.mCharacterLayout);
-    this.mGifSprite = {};
-    this.mBombArray = [];
-    this.mIsBombing = false;
+  }
+
+  async init() {
+    const { name, status, pos } = this.mInitData;
+
+    const gif = (name: string) =>
+      (rscManager.getHandle.getRsc(name) as AnimatedGIF).clone();
+
     this.mGifSprite = {
-      wait: rscManager.getHandle.getRsc(`${name}-wait.gif`) as AnimatedGIF,
-      left: rscManager.getHandle.getRsc(`${name}-l.gif`) as AnimatedGIF,
-      right: rscManager.getHandle.getRsc(`${name}-r.gif`) as AnimatedGIF,
-      down: rscManager.getHandle.getRsc(`${name}-down.gif`) as AnimatedGIF,
-      up: rscManager.getHandle.getRsc(`${name}-up.gif`) as AnimatedGIF,
-      bomb: rscManager.getHandle.getRsc(`${name}-bombing.gif`) as AnimatedGIF,
+      wait: gif(`${name}-wait.gif`),
+      left: gif(`${name}-l.gif`),
+      right: gif(`${name}-r.gif`),
+      down: gif(`${name}-down.gif`),
+      up: gif(`${name}-up.gif`),
+      bomb: gif(`${name}-bombing.gif`),
     };
-    this.mStatus = 'wait';
-    this.chageStatus(this.mStatus);
-    this.position.set(config.tileScale, config.tileScale);
+
+    await this.createCharacter();
+    await this.createItem();
+    this.chageStatus(status);
+    this.position.set(pos[0] * tileScale, pos[1] * tileScale);
+  }
+
+  async createCharacter() {
+    this.mCharacterLayout.addChild(this.mGifSprite.wait);
+    this.mCharacterLayout.addChild(this.mGifSprite.left);
+    this.mCharacterLayout.addChild(this.mGifSprite.right);
+    this.mCharacterLayout.addChild(this.mGifSprite.up);
+    this.mCharacterLayout.addChild(this.mGifSprite.down);
+    const id = new PIXI.Text(this.mSocketId.slice(0, 4), {
+      fontSize: 14,
+      fill: 0xffffff,
+      align: 'center',
+      padding: 4,
+      stroke: '#000',
+      strokeThickness: 8,
+    });
+    id.y = tileScale - 10;
+    this.addChild(id);
+  }
+
+  async createItem() {
+    const key = Object.keys(this.mItems);
+    for (let i = 0; i < key.length; i++) {
+      this.mItemLayout.addChild(this.mItems[key[i]]);
+      this.mItems[key[i]].visible = false;
+    }
+  }
+
+  changeItem(itemName: string) {
+    const sprites = Object.values(this.mItems);
+    for (const item of sprites) {
+      item.visible = false;
+    }
+    if (itemName === 'none') return;
+    this.mItems[itemName].visible = true;
   }
 
   chageStatus(status: string) {
-    this.mStatus = status;
-
-    switch (status) {
-      case 'bomb':
-        this.mItemLayout.removeChildren();
-        this.mItemLayout.addChild(new PlatBomb());
-        break;
-      case 'plantedBomb':
-        this.mItemLayout.removeChildren();
-        break;
-      default:
-        this.mCharacterLayout.removeChildren();
-        this.mCharacterLayout.addChild(this.mGifSprite[status]);
-        break;
+    const gifs = Object.values(this.mGifSprite);
+    for (const gif of gifs) {
+      gif.visible = false;
     }
-  }
-
-  async bomb() {
-    this.chageStatus('plantedBomb');
-    const metrix = util.getMetrixPos(this.x, this.y);
-    const canvas = {
-      x: metrix.x * config.tileScale,
-      y: metrix.y * config.tileScale,
-    };
-
-    if (config.mapData[metrix.y][metrix.x] === 1) return;
-
-    if (this.mIsBombing || this.mUseBombCnt >= this.mFixBombCnt) return;
-    this.mUseBombCnt += 1;
-    this.mIsBombing = true;
-
-    const bomb = new Bomb();
-    bomb.position.set(canvas.x, canvas.y);
-    bomb.setGlobalPos = { x: canvas.x, y: canvas.y };
-    bomb.zIndex = 2;
-    this.mBombArray.push(bomb);
-
-    const scene = this.parent as BomBerScene;
-    scene.addChild(bomb);
-
-    this.mIsBombing = false;
-    await bomb.plantedBomb();
-  }
-
-  reduceBombCnt() {
-    for (let i = 0; i < this.mBombArray.length; i++) {
-      const { isAlive } = this.mBombArray[i];
-      if (!isAlive) this.mBombArray.splice(i, 1);
-    }
-    this.mUseBombCnt = this.mBombArray.length;
+    this.mGifSprite[status].visible = true;
   }
 
   async setDirection(direction: DirectionType) {
-    if (this.isMoving) return;
-
-    this.isMoving =
-      direction.up || direction.down || direction.left || direction.right;
-
-    const { tileScale } = config;
+    if (!this.mIsAlive) return;
     if (direction.up) {
-      this.chageStatus('up');
-      await this.move(0, this.y - tileScale, 'col');
+      await this.move(this.x, this.y - tileScale, 'up');
     }
     if (direction.down) {
-      this.chageStatus('down');
-      await this.move(0, this.y + tileScale, 'col');
+      await this.move(this.x, this.y + tileScale, 'down');
     }
     if (direction.left) {
-      this.chageStatus('left');
-      await this.move(this.x - tileScale, 0, 'row');
+      await this.move(this.x - tileScale, this.y, 'left');
     }
     if (direction.right) {
-      this.chageStatus('right');
-      await this.move(this.x + tileScale, 0, 'row');
+      await this.move(this.x + tileScale, this.y, 'right');
     }
   }
 
-  setAlive(alive: boolean) {
-    if (alive) return;
-    this.setAlive = () => null;
-    this.death();
+  async move(x: number, y: number, status: string) {
+    if (this.mIsMoving && this.mIsAlive) return;
+
+    this.mIsMoving = true;
+    this.scene.setMove({ id: this.mSocketId, pos: [x, y], status });
   }
 
-  async move(x: number, y: number, direction: string) {
-    const gsapOpt: { [key: string]: any } = {
-      x,
-      y,
-      duration: config.speed,
-      ease: 'none',
-      onComplete: async () => {
-        this.isMoving = false;
-      },
-    };
-
-    if (direction === 'row') {
-      delete gsapOpt.y;
-    } else {
-      delete gsapOpt.x;
+  async dead() {
+    this.mIsAlive = false;
+    const gifs = Object.values(this.mGifSprite);
+    for (const gif of gifs) {
+      gif.stop();
     }
-    gsap.to(this, gsapOpt);
-  }
-
-  async checkStatus() {
-    const { mapData, tileScale } = config;
-    const { x, y } = util.getCanvasPos(this.x, this.y);
-    // console.log(x, y);
-    const metrix = { x: x / tileScale, y: y / tileScale };
-    if (mapData[metrix.y][metrix.x] === 1) {
-      console.log(x, y);
-      gsap.killTweensOf(this);
-      this.position.set(x, y);
-      return false;
-    }
-    return true;
-  }
-
-  death() {
-    console.error('death');
-    (this.setDirection as any) = () => null;
   }
 }

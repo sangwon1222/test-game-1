@@ -36,7 +36,7 @@ export class DirectionManager {
         return;
       }
 
-      const scene = Application.getHandle.getSceneManager.currentScene;
+      const scene = Application.getHandle.getScene;
       if (scene.useKeyboard) scene.keydownEvent(e);
     };
     document.onkeyup = (e) => {
@@ -45,7 +45,7 @@ export class DirectionManager {
         return;
       }
 
-      const scene = Application.getHandle.getSceneManager.currentScene;
+      const scene = Application.getHandle.getScene;
       if (scene.useKeyboard) scene.keyupEvent(e);
     };
   }

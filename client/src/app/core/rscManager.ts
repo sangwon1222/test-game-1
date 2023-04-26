@@ -75,7 +75,6 @@ export class rscManager {
       Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
     const key = common ? `common/${srcKey}` : `${sceneName}/${srcKey}`;
 
-    const clone = this.mRscArry[key].clone();
-    return clone;
+    return this.mRscArry[key];
   }
 }

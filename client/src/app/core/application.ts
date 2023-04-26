@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
-import { io, Socket } from 'socket.io-client';
 import SceneManager from '@core/sceneManager';
 import ModalManager from '@core/modalManager';
 import config from '../config';
+import Scene from './scene';
 
 const params = {
   backgroundColor: config.background,
@@ -16,13 +16,8 @@ export default class Application extends PIXI.Application {
     return Application.handle ? Application.handle : new Application(params);
   }
 
-  private mSocket!: Socket;
-  get socket(): Socket {
-    return this.mSocket;
-  }
-
-  get getSceneManager(): SceneManager {
-    return this.mSceneManager;
+  get getScene(): Scene {
+    return this.mSceneManager.currentScene;
   }
   get getModalManager(): ModalManager {
     return this.mModalManager;
@@ -65,27 +60,23 @@ export default class Application extends PIXI.Application {
 
     await this.mSceneManager.init();
     await this.mModalManager.init();
-    await this.connectSocket();
     await this.mSceneManager.startGame();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // 다른 탭으로 전환했을 때,
+        this.onHiddenTab();
+      } else {
+        // 다른 탭 보다가 돌아왔을 때,
+        this.onViewTab();
+      }
+    });
   }
 
-  async connectSocket() {
-    this.mSocket = io('ws://localhost:3000', {});
-
-    this.mSocket.on('welcome', (info: any) => {
-      //
-    });
-
-    this.mSocket.on('entertUser', (id: number) => {
-      // console.log('entertUser', id);
-    });
-
-    this.mSocket.on('leaveUser', (id: number) => {
-      // console.log('leaveUser', id);
-    });
-
-    this.mSocket.on('move', ({ id, paths }: { id: number; paths: any }) => {
-      // console.log('move', { id, paths });
-    });
+  onHiddenTab() {
+    //
+  }
+  onViewTab() {
+    //
   }
 }

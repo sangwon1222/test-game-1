@@ -1,16 +1,16 @@
-/* eslint-disable @typescript-eslint/no-useless-constructor */
 import * as PIXI from 'pixi.js';
 import { Tile } from './mapTile';
 import config from './config';
 
 export default class Map extends PIXI.Container {
-  private mMapData: any = config.mapData;
+  private mMapData: number[][];
 
   get mapData() {
     return this.mMapData;
   }
-  constructor() {
+  constructor(mapData: number[][]) {
     super();
+    this.mMapData = mapData;
   }
 
   async init() {
