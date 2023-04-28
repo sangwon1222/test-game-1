@@ -1,6 +1,6 @@
 import { rscManager } from '@/app/core/rscManager';
 import * as PIXI from 'pixi.js';
-import config from './config';
+import config from './bomberConfig';
 import BomBerScene from './scene';
 
 /**

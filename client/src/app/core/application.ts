@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import SceneManager from '@core/sceneManager';
 import ModalManager from '@core/modalManager';
-import config from '../config';
+import config from '../canvasConfig';
 import Scene from './scene';
 
 const params = {
@@ -45,10 +45,10 @@ export default class Application extends PIXI.Application {
   }
 
   async init() {
-    console.log(
-      '%c LSW!!',
-      'font-weight: bold; font-size: 50px;color: red; text-shadow: 3px 3px 0 rgb(217,31,38) , 6px 6px 0 rgb(226,91,14) , 9px 9px 0 rgb(245,221,8) , 12px 12px 0 rgb(5,148,68) , 15px 15px 0 rgb(2,135,206) , 18px 18px 0 rgb(4,77,145) , 21px 21px 0 rgb(42,21,113)'
-    );
+    // console.log(
+    //   '%c LSW!!',
+    //   'font-weight: bold; font-size: 50px;color: red; text-shadow: 3px 3px 0 rgb(217,31,38) , 6px 6px 0 rgb(226,91,14) , 9px 9px 0 rgb(245,221,8) , 12px 12px 0 rgb(5,148,68) , 15px 15px 0 rgb(2,135,206) , 18px 18px 0 rgb(4,77,145) , 21px 21px 0 rgb(42,21,113)'
+    // );
     this.stage.removeChildren();
     this.mSceneManager = new SceneManager();
     this.mModalManager = new ModalManager();
@@ -60,7 +60,7 @@ export default class Application extends PIXI.Application {
 
     await this.mSceneManager.init();
     await this.mModalManager.init();
-    await this.mSceneManager.startGame();
+    await this.mSceneManager.start();
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {

@@ -1,7 +1,7 @@
 import { rscManager } from '@/app/core/rscManager';
 import BomBerScene from './scene';
 import * as PIXI from 'pixi.js';
-import config from './config';
+import config from './bomberConfig';
 import { gsap } from 'gsap';
 import Application from '@/app/core/application';
 

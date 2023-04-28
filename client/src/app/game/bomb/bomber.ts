@@ -4,8 +4,9 @@ import * as PIXI from 'pixi.js';
 import util, { DirectionType, GifObjectType } from '../common/index';
 import { Bomb, PlatBomb } from './bomb';
 import BomBerScene from './scene';
-import config from './config';
+import config from './bomberConfig';
 import Application from '@/app/core/application';
+import { gsap } from 'gsap';
 
 const { tileScale } = config;
 
@@ -102,11 +103,13 @@ export default class BomBer extends PIXI.Container {
   }
 
   async createCharacter() {
-    this.mCharacterLayout.addChild(this.mGifSprite.wait);
-    this.mCharacterLayout.addChild(this.mGifSprite.left);
-    this.mCharacterLayout.addChild(this.mGifSprite.right);
-    this.mCharacterLayout.addChild(this.mGifSprite.up);
-    this.mCharacterLayout.addChild(this.mGifSprite.down);
+    const list = ['wait', 'up', 'down', 'left', 'right'];
+    for (const status of list) {
+      const gif = this.mGifSprite[status];
+      this.mCharacterLayout.addChild(gif);
+    }
+    this.mCharacterLayout.pivot.set(tileScale / 2, tileScale / 2);
+    this.mCharacterLayout.position.set(tileScale / 2, tileScale / 2);
     const id = new PIXI.Text(this.mSocketId.slice(0, 4), {
       fontSize: 14,
       fill: 0xffffff,
@@ -162,16 +165,31 @@ export default class BomBer extends PIXI.Container {
 
   async move(x: number, y: number, status: string) {
     if (this.mIsMoving && this.mIsAlive) return;
+    const map = this.scene.mapData;
+
+    const matrix = [x / tileScale, y / tileScale];
+    const mapValue = map[matrix[1]][matrix[0]];
+    if (mapValue === 1) {
+      this.chageStatus(status);
+      return;
+    }
 
     this.mIsMoving = true;
-    this.scene.setMove({ id: this.mSocketId, pos: [x, y], status });
+    this.scene.setMove({ pos: [x, y], status });
   }
 
-  async dead() {
+  async death() {
     this.mIsAlive = false;
     const gifs = Object.values(this.mGifSprite);
     for (const gif of gifs) {
       gif.stop();
     }
+    gsap
+      .to(this.mCharacterLayout.scale, { x: 1.2, y: 1.2, duration: 0.5 })
+      .repeat(2)
+      .yoyo(true)
+      .eventCallback('onComplete', () => {
+        gsap.to(this.mCharacterLayout.scale, { x: 0, y: 0, duration: 0.5 });
+      });
   }
 }

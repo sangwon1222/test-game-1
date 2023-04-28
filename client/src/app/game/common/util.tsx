@@ -1,4 +1,4 @@
-import config from '../bomb/config';
+import config from '../bomb/bomberConfig';
 
 export const util = {
   getCanvasPos(metrixX: number, metrixY: number) {

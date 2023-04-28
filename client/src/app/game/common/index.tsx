@@ -4,6 +4,10 @@ import BomBer from '../bomb/bomber';
 
 export default util;
 
+export interface TypeSocketCallbacks {
+  [key: string]: void[];
+}
+
 export interface GifObjectType {
   [key: string]: AnimatedGIF;
 }
@@ -21,23 +25,38 @@ export interface BomBerPosType {
 }
 
 export interface TypeInitSocketData {
-  id: string;
-  users: [{ id: string; pos: number[]; status: string }];
+  socketId: string;
+  users: TypeBomberSocket[];
   mapData: number[][];
 }
 
-export interface TypeEnterSocket {
-  id: string;
+export interface TypeIncomingUserSocket {
+  socketId: string;
   pos: number[];
 }
 
+export interface TypeBomberSocket {
+  socketId: string;
+  pos: number[];
+  status: string;
+}
+
 export interface TypeMoveSocket {
-  id: string;
   pos: number[];
   status: string;
 }
 
 export interface TypeFireBomb {
-  id: string;
+  socketId: string;
+  firePos: number[][];
+}
+
+export interface TypeBombPos {
+  socketId: string;
+  bombPos: number[];
+}
+
+export interface TypeFireBombPos {
+  socketId: string;
   firePos: number[][];
 }

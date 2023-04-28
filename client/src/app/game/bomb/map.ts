@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { Tile } from './mapTile';
-import config from './config';
+import config from './bomberConfig';
 
 export default class Map extends PIXI.Container {
   private mMapData: number[][];

@@ -11,15 +11,17 @@ export default class ModalManager extends PIXI.Container {
 
   async init() {
     await this.mLoading.init();
+    this.addChild(this.mLoading);
+    this.mLoading.visible = false;
   }
 
   async loadingStart() {
-    this.addChild(this.mLoading);
-    this.mLoading.start();
+    this.mLoading.visible = true;
+    await this.mLoading.start();
   }
 
   async loadingEnd() {
-    this.removeChildren();
-    this.mLoading.end();
+    await this.mLoading.end();
+    this.mLoading.visible = false;
   }
 }

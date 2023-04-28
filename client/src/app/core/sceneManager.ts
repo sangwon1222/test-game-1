@@ -27,18 +27,19 @@ export default class SceneManager extends PIXI.Container {
     this.sceneAry = [];
     this.sceneAry.push(new BomBerScene(0, 'bomber'));
   }
-  async startGame() {
+  async start() {
     await this.changeScene('bomber');
   }
 
   async changeScene(goSceneName: string) {
     this.removeChildren();
+    await this.sceneAry[this.sceneIdx]?.endGame();
     await Application.getHandle.getModalManager.loadingStart();
-    this.sceneAry[this.sceneIdx]?.endGame();
     for (let i = 0; i < this.sceneAry.length; i++) {
       const { sceneName } = this.sceneAry[i].sceneInfo;
       if (goSceneName === sceneName) {
         this.addChild(this.sceneAry[i]);
+        await this.sceneAry[i].init();
         await this.sceneAry[i].startGame();
         await Application.getHandle.getModalManager.loadingEnd();
         break;

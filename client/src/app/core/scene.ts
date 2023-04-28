@@ -22,18 +22,16 @@ export default class Scene extends PIXI.Container {
     this.info = { idx, sceneName };
   }
 
-  /**
-   * @description scene을 상속받는 각 scene에서 호출
-   */
-  async startGame() {
-    // console.log(`${this.info.sceneName}-start!`);
+  async init() {
+    //
   }
 
-  /**
-   * @description scene을 상속받는 각 scene에서 호출
-   */
+  /**@description scene을 상속받는 각 scene에서 호출*/
+  async startGame() {
+    //
+  }
+
   async endGame() {
-    // console.log(`${this.info.sceneName}-end!`);
     gsap.globalTimeline.clear();
     this.removeChildren();
   }

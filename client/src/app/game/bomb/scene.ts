@@ -1,56 +1,75 @@
+import { BomBerObjectType, TypeBomberSocket, TypeMoveSocket } from '../common';
 import { DirectionManager } from './directionManager';
-import bomberConfig from '@/app/game/bomb/config';
+import bomberConfig from '@/app/game/bomb/bomberConfig';
 import { rscManager } from '@core/rscManager';
 import { util } from '../common/util';
+import { SocketIo } from './socket';
 import Scene from '@core/scene';
 import BomBer from './bomber';
 import Map from './map';
-import { io, Socket } from 'socket.io-client';
-import {
-  BomBerObjectType,
-  TypeEnterSocket,
-  TypeFireBomb,
-  TypeMoveSocket,
-} from '../common';
 import * as PIXI from 'pixi.js';
-import config from '@/app/game/bomb/config';
-import { gsap } from 'gsap';
-import Application from '@/app/core/application';
-import { Bomb, Fire } from './bomb';
-import { ScenePacket } from './Packet';
+import canvasConfig from '@/app/canvasConfig';
 
 export default class BomBerScene extends Scene {
+  private mCharacterLayout!: PIXI.Container;
+  private mMapLayout!: PIXI.Container;
+  private mBombersInfo: TypeBomberSocket[];
+  private mBombers: BomBerObjectType;
+  private mMapData!: number[][];
   private mMyId!: string;
   private mMe!: BomBer;
   private mMap!: Map;
-  private mBombersInfo: [{ id: string; pos: number[]; status: string }];
-  private mBombers: BomBerObjectType;
-  private mSocket!: Socket;
-  private mMapData!: number[][];
-  private mMapLayout!: PIXI.Container;
-  private mCharacterLayout!: PIXI.Container;
+  private mSocket!: SocketIo;
+  private mLogs: { [key: string]: boolean };
 
+  get socket() {
+    return this.mSocket;
+  }
+
+  get me() {
+    return this.mMe;
+  }
   get myId() {
     return this.mMyId;
   }
-  set myId(id: string) {
-    this.mMyId = id;
+
+  get bombers() {
+    return this.mBombers;
+  }
+  get bombersContainer() {
+    return this.mCharacterLayout;
   }
 
-  get getMe() {
-    return this.mMe;
+  get bombersInfo() {
+    return this.mBombersInfo;
   }
 
-  get getMePos() {
-    const { x, y } = util.getMetrixPos(this.mMe.x, this.mMe.y);
-    return { x, y };
+  set bombersInfo(info: TypeBomberSocket[]) {
+    this.mBombersInfo = info;
+  }
+
+  get mapData() {
+    return this.mMapData;
+  }
+  set mapData(mapData: number[][]) {
+    this.mMapData = mapData;
   }
 
   constructor(idx: number, sceneName: string) {
     super(idx, sceneName);
     this.useKeyboard = true;
+    this.sortableChildren = true;
+
+    this.mLogs = {};
     this.mBombers = {};
-    this.mBombersInfo = [{ id: 'init', pos: [1, 1], status: 'wait' }];
+    this.mBombersInfo = [{ socketId: 'init', pos: [1, 1], status: 'wait' }];
+
+    this.mMapLayout = new PIXI.Container();
+    this.mMapLayout.zIndex = 1;
+    this.mCharacterLayout = new PIXI.Container();
+    this.mCharacterLayout.sortableChildren = true;
+    this.mCharacterLayout.zIndex = 2;
+    this.addChild(this.mMapLayout, this.mCharacterLayout);
   }
 
   async keydownEvent(e: KeyboardEvent) {
@@ -63,22 +82,19 @@ export default class BomBerScene extends Scene {
     }
   }
 
+  setId(socketId: string) {
+    this.mMyId = socketId;
+    this.setId = () => null;
+  }
+  async init() {
+    this.mSocket = new SocketIo(this);
+    await this.mSocket.init();
+  }
+
   async startGame() {
-    await this.connectSocket();
-
-    this.mMapLayout = new PIXI.Container();
-    this.mMapLayout.zIndex = 1;
-
-    this.mCharacterLayout = new PIXI.Container();
-    this.mCharacterLayout.sortableChildren = true;
-    this.mCharacterLayout.zIndex = 2;
-
-    this.sortableChildren = true;
     this.addChild(this.mMapLayout, this.mCharacterLayout);
-
     await rscManager.getHandle.loadAllRsc(bomberConfig.rscList);
     await this.createObject();
-
     await this.registAnimationFrame();
   }
 
@@ -91,103 +107,13 @@ export default class BomBerScene extends Scene {
     requestAnimationFrame(() => cb());
   }
 
-  async connectSocket() {
-    this.mSocket = io('ws://localhost:3000');
-
-    this.mSocket.on('connect', () => {
-      new ScenePacket(this.mSocket);
-    });
-
-    // this.mSocket.on('welcome', ({ id, users, mapData }: TypeInitSocketData) => {
-    //   console.log('welcome', { id, users });
-    //   this.mMyId = id;
-    //   this.mMapData = mapData;
-    //   this.mBombersInfo = users;
-    // });
-
-    this.mSocket.on('entertUser', ({ id, pos }: TypeEnterSocket) => {
-      console.log('entertUser', { id });
-      if (!this.mBombers[id]) {
-        this.insertCharacter(id, pos, 'wait');
-      }
-    });
-
-    this.mSocket.on('leaveUser', ({ id }: { id: string }) => {
-      console.log('leaveUser', id);
-      if (this.mBombers[id]) {
-        this.mCharacterLayout.removeChild(this.mBombers[id]);
-      }
-      delete this.mBombers[id];
-    });
-
-    this.mSocket.on('move', ({ id, pos, status }: TypeMoveSocket) => {
-      const target = id === this.mMyId ? this.mMe : this.mBombers[id];
-      if (!target) return;
-
-      gsap.to(target, {
-        x: pos[0],
-        y: pos[1],
-        duration: config.speed,
-        onStart: () => {
-          target?.chageStatus(status);
-        },
-        onComplete: () => {
-          this.mMe.isMoving = false;
-        },
-      });
-
-      Application.getHandle.onViewTab = () => {
-        if (!target) return;
-        gsap.killTweensOf(target);
-        target?.chageStatus(status);
-        target.position.set(pos[0], pos[1]);
-      };
-    });
-
-    this.mSocket.on('setBomb', ({ id }: TypeFireBomb) => {
-      const target = this.mBombers[id];
-      const canvas = util.getCanvasPos(target.x, target.y);
-      const bomb = new Bomb(target.bombFire);
-      bomb.position.set(canvas.x, canvas.y);
-      this.mCharacterLayout.addChild(bomb);
-      setTimeout(() => {
-        this.mCharacterLayout.removeChild(bomb);
-      }, target.waitBomb * 1000);
-    });
-
-    this.mSocket.on('fireBomb', ({ id, firePos }: TypeFireBomb) => {
-      const fires = [];
-      setTimeout(() => {
-        this.mSocket.emit('checkDeadUser');
-        for (const [x, y] of firePos) {
-          const fire = new Fire();
-          fire.zIndex = 3;
-          fire.position.set(x * config.tileScale, y * config.tileScale);
-          this.mCharacterLayout.addChild(fire);
-          fires.push(fire);
-          fire.on('endFire' as keyof PIXI.DisplayObjectEvents, () => {
-            this.mCharacterLayout.removeChild(fire);
-            this.mSocket.emit('endBomb', { firePos });
-          });
-        }
-      }, this.mBombers[id].waitBomb * 1000);
-    });
-
-    this.mSocket.on('deadUser', ({ users }: { users: string[] }) => {
-      console.log(users);
-      for (const id of users) {
-        this.mBombers[id]?.dead();
-      }
-    });
-  }
-
-  setMove({ id, pos, status }: { id: string; pos: number[]; status: string }) {
-    this.mSocket.emit('moveReq', { id: this.mMyId, pos, status });
+  setMove({ pos, status }: TypeMoveSocket) {
+    this.mSocket.emit('moveReq', { pos, status });
   }
 
   async createObject() {
-    for (const { id, pos, status } of this.mBombersInfo) {
-      await this.insertCharacter(id, pos, status);
+    for (const user of this.mBombersInfo) {
+      await this.insertUser(user);
     }
     this.mMap = new Map(this.mMapData);
     await this.mMap.init();
@@ -196,13 +122,18 @@ export default class BomBerScene extends Scene {
   }
 
   /**@description 캐릭터 삽입 */
-  async insertCharacter(socketId: string, pos: number[], status: string) {
+  async insertUser({ socketId, pos, status }: TypeBomberSocket) {
     const character = new BomBer('cha', socketId, status, pos);
     await character.init();
-    this.mMe = character;
+    if (this.myId === socketId) this.mMe = character;
     this.mBombers[socketId] = character;
 
     this.mCharacterLayout.addChild(character);
+  }
+
+  leaveUser(socketId: string) {
+    const target = this.mBombers[socketId];
+    if (target) this.mCharacterLayout.removeChild(target);
   }
 
   async setBomb() {
@@ -210,11 +141,32 @@ export default class BomBerScene extends Scene {
     this.mMe.useBomb += 1;
     const metrix = util.getMetrixPos(this.mMe.x, this.mMe.y);
 
-    this.mSocket.emit('setBomb', {
-      id: this.mMyId,
-      bombPos: [metrix.x, metrix.y],
-      fireScope: this.mMe.bombFire,
+    const socketId = this.myId;
+    const bombPos = [metrix.x, metrix.y];
+    const fireScope = this.mMe.bombFire;
+
+    this.mSocket.emit('setBomb', { socketId, bombPos, fireScope });
+  }
+
+  killLog(msg: string) {
+    if (this.mLogs[msg]) return;
+    this.mLogs[msg] = true;
+    const { length } = Object.values(this.mLogs);
+    const text = new PIXI.Text(msg, {
+      fontSize: 14,
+      fill: 0xff0000,
+      fontWeight: 'bold',
     });
+    text.anchor.set(1, 0);
+    text.position.set(canvasConfig.width, (length - 1) * 20);
+    text.zIndex = 3;
+
+    this.addChild(text);
+
+    setTimeout(() => {
+      delete this.mLogs[msg];
+      this.removeChild(text);
+    }, 6000);
   }
 
   // async endGame() {

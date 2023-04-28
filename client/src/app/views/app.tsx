@@ -1,7 +1,7 @@
 import { createRef, useEffect } from 'react';
 import Application from '@core/application';
 import styled from 'styled-components';
-import config from '../config';
+import config from '../canvasConfig';
 
 const app = new Application({
   backgroundColor: config.background,
