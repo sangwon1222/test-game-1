@@ -88,15 +88,10 @@ export class OnEvent {
         target.isMoving = false;
       },
     });
-
-    // Application.getHandle.onViewTab = () => {
-    //   if (!target) return;
-    //   target.isMoving = false;
-    // };
   }
 
   setBomb({ socketId, bombPos }: TypeBombPos) {
-    console.log('setBomb');
+    this.scene.bombers[socketId].useBomb += 1;
     const target = this.scene.bombers[socketId] as BomBer;
     const bomb = new Bomb(target.bombFire);
     bomb.position.set(bombPos[0] * tileScale, bombPos[1] * tileScale);
@@ -108,6 +103,7 @@ export class OnEvent {
         bombPos,
         fireScope: target.bombFire,
       });
+      this.scene.bombers[socketId].useBomb -= 1;
       this.scene.bombersContainer.removeChild(bomb);
     }, target.waitBomb * 1000);
   }
@@ -132,7 +128,6 @@ export class OnEvent {
       this.scene.killLog(`[${killer.slice(4)}] kill => [${death.slice(4)}]`);
       console.error(death);
       this.scene.bombers[death]?.death();
-      delete this.scene.bombers[death];
     }
   }
 

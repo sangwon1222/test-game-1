@@ -10,6 +10,7 @@ import Map from './map';
 import * as PIXI from 'pixi.js';
 import canvasConfig from '@/app/canvasConfig';
 import Application from '@/app/core/application';
+import { gsap } from 'gsap';
 
 export default class BomBerScene extends Scene {
   private mCharacterLayout!: PIXI.Container;
@@ -154,7 +155,6 @@ export default class BomBerScene extends Scene {
 
   async setBomb() {
     if (this.mMe.invalidBomb) return;
-    this.mMe.useBomb += 1;
     const metrix = util.getMetrixPos(this.mMe.x, this.mMe.y);
 
     const socketId = this.myId;
@@ -183,6 +183,39 @@ export default class BomBerScene extends Scene {
       delete this.mLogs[msg];
       this.removeChild(text);
     }, 6000);
+  }
+
+  deathUser() {
+    const play = new PIXI.Text('play agin', { fill: 0xffffff });
+    play.cursor = 'pointer';
+    play.anchor.set(0.5);
+    play.position.set(canvasConfig.width / 2 - 200, canvasConfig.height / 2);
+    play.interactive = true;
+    play.on('pointerup', () => {
+      dimmed.removeChildren();
+      this.removeChild(dimmed);
+      this.mBombers[this.myId].alive();
+    });
+
+    const watch = new PIXI.Text('watch mode', { fill: 0xffffff });
+    watch.anchor.set(0.5);
+    watch.cursor = 'pointer';
+    watch.position.set(canvasConfig.width / 2 + 200, canvasConfig.height / 2);
+    watch.interactive = true;
+    watch.on('pointerup', () => {
+      dimmed.removeChildren();
+      this.removeChild(dimmed);
+    });
+
+    const dimmed = new PIXI.Graphics();
+    dimmed.beginFill(0x0000, 0.4);
+    dimmed.drawRect(0, 0, canvasConfig.width, canvasConfig.height);
+    dimmed.endFill();
+    dimmed.alpha = 0;
+    dimmed.zIndex = 5;
+    this.addChild(dimmed);
+    gsap.to(dimmed, { alpha: 1, duration: 0.5 });
+    dimmed.addChild(play, watch);
   }
 
   // async endGame() {

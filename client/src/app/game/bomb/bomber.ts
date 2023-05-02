@@ -1,8 +1,8 @@
 import { rscManager } from '@/app/core/rscManager';
 import { AnimatedGIF } from '@pixi/gif';
 import * as PIXI from 'pixi.js';
-import util, { DirectionType, GifObjectType } from '../common/index';
-import { Bomb, PlatBomb } from './bomb';
+import { DirectionType, GifObjectType } from '../common/index';
+import { PlatBomb } from './bomb';
 import BomBerScene from './scene';
 import config from './bomberConfig';
 import Application from '@/app/core/application';
@@ -29,6 +29,7 @@ export default class BomBer extends PIXI.Container {
   }
 
   get invalidBomb(): boolean {
+    console.log(this.mFixBombCnt, this.mUseBombCnt);
     return this.mFixBombCnt <= this.mUseBombCnt;
   }
 
@@ -51,7 +52,15 @@ export default class BomBer extends PIXI.Container {
   }
 
   set useBomb(value: number) {
-    this.mUseBombCnt += 1;
+    if (this.mUseBombCnt >= this.mFixBombCnt) {
+      this.mUseBombCnt = this.mFixBombCnt;
+    } else {
+      this.mUseBombCnt = value;
+    }
+  }
+
+  get useBomb() {
+    return this.mUseBombCnt;
   }
 
   constructor(
@@ -170,6 +179,17 @@ export default class BomBer extends PIXI.Container {
     this.scene.setMove({ pos: [x, y], status });
   }
 
+  alive() {
+    const gifs = Object.values(this.mGifSprite);
+    for (const gif of gifs) {
+      gif.play();
+    }
+    this.mCharacterLayout.scale.set(1, 1);
+    this.visible = true;
+    this.mIsAlive = true;
+    this.mIsMoving = false;
+  }
+
   async death() {
     this.mIsAlive = false;
     const gifs = Object.values(this.mGifSprite);
@@ -181,7 +201,16 @@ export default class BomBer extends PIXI.Container {
       .repeat(2)
       .yoyo(true)
       .eventCallback('onComplete', () => {
-        gsap.to(this.mCharacterLayout.scale, { x: 0, y: 0, duration: 0.5 });
+        gsap.to(this.mCharacterLayout.scale, {
+          x: 0,
+          y: 0,
+          duration: 0.5,
+          onComplete: () => {
+            this.visible = false;
+            this.position.set(tileScale, tileScale);
+            this.scene.deathUser();
+          },
+        });
       });
   }
 }
