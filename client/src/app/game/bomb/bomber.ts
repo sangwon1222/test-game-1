@@ -165,14 +165,6 @@ export default class BomBer extends PIXI.Container {
 
   async move(x: number, y: number, status: string) {
     if (this.mIsMoving && this.mIsAlive) return;
-    const map = this.scene.mapData;
-
-    const matrix = [x / tileScale, y / tileScale];
-    const mapValue = map[matrix[1]][matrix[0]];
-    if (mapValue === 1) {
-      this.chageStatus(status);
-      return;
-    }
 
     this.mIsMoving = true;
     this.scene.setMove({ pos: [x, y], status });

@@ -9,6 +9,7 @@ import BomBer from './bomber';
 import Map from './map';
 import * as PIXI from 'pixi.js';
 import canvasConfig from '@/app/canvasConfig';
+import Application from '@/app/core/application';
 
 export default class BomBerScene extends Scene {
   private mCharacterLayout!: PIXI.Container;
@@ -96,6 +97,10 @@ export default class BomBerScene extends Scene {
     await rscManager.getHandle.loadAllRsc(bomberConfig.rscList);
     await this.createObject();
     await this.registAnimationFrame();
+    Application.getHandle.onViewTab = () => {
+      this.mMe.isMoving = false;
+      this.mSocket.emit('updateUsersPos');
+    };
   }
 
   async registAnimationFrame() {
@@ -108,6 +113,17 @@ export default class BomBerScene extends Scene {
   }
 
   setMove({ pos, status }: TypeMoveSocket) {
+    const matrix = [
+      pos[0] / bomberConfig.tileScale,
+      pos[1] / bomberConfig.tileScale,
+    ];
+    const mapValue = this.mapData[matrix[1]][matrix[0]];
+    if (mapValue === 1) {
+      this.mMe.isMoving = false;
+      this.mMe.chageStatus(status);
+      return;
+    }
+
     this.mSocket.emit('moveReq', { pos, status });
   }
 

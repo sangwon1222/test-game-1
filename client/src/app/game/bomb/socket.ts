@@ -21,7 +21,9 @@ export class SocketIo {
 
   constructor(scene: BomBerScene) {
     this.socketOn = new OnEvent(scene);
-    this.socket = io('ws://localhost:3000');
+    this.socket = io('ws://localhost:3000', {
+      withCredentials: false,
+    });
   }
 
   async init() {
@@ -69,6 +71,11 @@ export class OnEvent {
   move({ socketId, pos, status }: TypeBomberSocket) {
     const target = this.scene.bombers[socketId];
     if (!target) return;
+    if (pos.length === 0) {
+      target?.chageStatus(status);
+      target.isMoving = false;
+      return;
+    }
 
     gsap.to(target, {
       x: pos[0],
@@ -82,12 +89,10 @@ export class OnEvent {
       },
     });
 
-    Application.getHandle.onViewTab = () => {
-      if (!target) return;
-      gsap.killTweensOf(target);
-      target?.chageStatus(status);
-      target.position.set(pos[0], pos[1]);
-    };
+    // Application.getHandle.onViewTab = () => {
+    //   if (!target) return;
+    //   target.isMoving = false;
+    // };
   }
 
   setBomb({ socketId, bombPos }: TypeBombPos) {
@@ -125,8 +130,20 @@ export class OnEvent {
   deathUser({ info }: { info: { killer: string; death: string }[] }) {
     for (const { killer, death } of info) {
       this.scene.killLog(`[${killer.slice(4)}] kill => [${death.slice(4)}]`);
+      console.error(death);
       this.scene.bombers[death]?.death();
       delete this.scene.bombers[death];
+    }
+  }
+
+  updateUsersPos({ users }: { users: TypeBomberSocket[] }) {
+    for (const user of users) {
+      const target = this.scene.bombers[user.socketId];
+      gsap.killTweensOf(target);
+      target.position.set(
+        user.pos[0] * config.tileScale,
+        user.pos[1] * config.tileScale
+      );
     }
   }
 }
