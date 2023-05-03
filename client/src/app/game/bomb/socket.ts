@@ -7,10 +7,11 @@ import {
   TypeBombPos,
   TypeLeaveUser,
 } from '../common';
-import BomBerScene from './scene';
-import { gsap } from 'gsap';
 import config from './bomberConfig';
 import { Bomb, Fire } from './bomb';
+import { readFileSync } from 'fs';
+import BomBerScene from './scene';
+import { gsap } from 'gsap';
 import BomBer from './bomber';
 
 const { tileScale, speed } = config;
@@ -21,9 +22,11 @@ export class SocketIo {
 
   constructor(scene: BomBerScene) {
     this.socketOn = new OnEvent(scene);
-    this.socket = io('http://lsw.kr:3000', {
-      withCredentials: false,
-    });
+    this.socket = io('https://lsw.kr', {
+      key: readFileSync('/app/certicates/privkey.pem'),
+      cert: readFileSync('/app/certicates/cert.pem'),
+      ca: [readFileSync('/app/certicates/chain.pem')],
+    } as any);
   }
 
   async init() {
