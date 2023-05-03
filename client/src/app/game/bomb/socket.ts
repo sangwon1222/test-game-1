@@ -21,7 +21,7 @@ export class SocketIo {
 
   constructor(scene: BomBerScene) {
     this.socketOn = new OnEvent(scene);
-    this.socket = io('ws://localhost:3000', {
+    this.socket = io('https://lsw.kr:3000', {
       withCredentials: false,
     });
   }
