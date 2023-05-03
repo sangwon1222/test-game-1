@@ -39,7 +39,7 @@ export default function App() {
         width:${w}px; 
         height: ${h}px; 
         border-radius: 20px;
-        box-shadow:0 20px 50px rgba(255,255,255,0.2);
+        box-shadow:0 0 40px 10px rgba(255,255,255,0.1);
       `
     );
   };
