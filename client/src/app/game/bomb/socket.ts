@@ -5,11 +5,11 @@ import {
   TypeBomberSocket,
   TypeFireBombPos,
   TypeBombPos,
+  TypeLeaveUser,
 } from '../common';
 import BomBerScene from './scene';
 import { gsap } from 'gsap';
 import config from './bomberConfig';
-import Application from '@/app/core/application';
 import { Bomb, Fire } from './bomb';
 import BomBer from './bomber';
 
@@ -51,19 +51,22 @@ export class OnEvent {
   constructor(scene: BomBerScene) {
     this.scene = scene;
   }
-  welcome({ socketId, users, mapData }: TypeInitSocketData) {
+  // welcome({ socketId, users, mapData }: TypeInitSocketData) {
+  welcome({ socketId, users, mapData, clientsCount }: TypeInitSocketData) {
     console.log('welcome', socketId);
-    this.scene.setId(socketId);
+    this.scene.myId = socketId;
     this.scene.bombersInfo = users;
     this.scene.mapData = mapData;
+    this.scene.clientsCount = clientsCount;
   }
 
-  incomingUser({ socketId, pos }: TypeIncomingUserSocket) {
-    console.log('incomingUser', socketId);
+  incomingUser({ socketId, pos, clientsCount }: TypeIncomingUserSocket) {
+    this.scene.clientsCount = clientsCount;
     this.scene.insertUser({ socketId, pos, status: 'wait' });
   }
 
-  leaveUser({ socketId }: { socketId: string }) {
+  leaveUser({ socketId, clientsCount }: TypeLeaveUser) {
+    this.scene.clientsCount = clientsCount;
     this.scene.leaveUser(socketId);
     delete this.scene.bombers[socketId];
   }

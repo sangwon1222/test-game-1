@@ -13,16 +13,21 @@ import Application from '@/app/core/application';
 import { gsap } from 'gsap';
 
 export default class BomBerScene extends Scene {
+  private mLogs: { [key: string]: boolean };
   private mCharacterLayout!: PIXI.Container;
-  private mMapLayout!: PIXI.Container;
   private mBombersInfo: TypeBomberSocket[];
+  private mMapLayout!: PIXI.Container;
   private mBombers: BomBerObjectType;
   private mMapData!: number[][];
+  private mUserCount: PIXI.Text;
+  private mSocket!: SocketIo;
   private mMyId!: string;
   private mMe!: BomBer;
   private mMap!: Map;
-  private mSocket!: SocketIo;
-  private mLogs: { [key: string]: boolean };
+
+  set clientsCount(v: number) {
+    this.mUserCount.text = `접속자 수: ${v} 명`;
+  }
 
   get socket() {
     return this.mSocket;
@@ -30,6 +35,9 @@ export default class BomBerScene extends Scene {
 
   get me() {
     return this.mMe;
+  }
+  set myId(v: string) {
+    this.mMyId = v;
   }
   get myId() {
     return this.mMyId;
@@ -71,7 +79,8 @@ export default class BomBerScene extends Scene {
     this.mCharacterLayout = new PIXI.Container();
     this.mCharacterLayout.sortableChildren = true;
     this.mCharacterLayout.zIndex = 2;
-    this.addChild(this.mMapLayout, this.mCharacterLayout);
+
+    this.mUserCount = new PIXI.Text();
   }
 
   async keydownEvent(e: KeyboardEvent) {
@@ -84,17 +93,26 @@ export default class BomBerScene extends Scene {
     }
   }
 
-  setId(socketId: string) {
-    this.mMyId = socketId;
-    this.setId = () => null;
-  }
   async init() {
     this.mSocket = new SocketIo(this);
     await this.mSocket.init();
   }
 
   async startGame() {
-    this.addChild(this.mMapLayout, this.mCharacterLayout);
+    const userCountBG = new PIXI.Graphics();
+    userCountBG.beginFill(0xffffff, 1);
+    userCountBG.drawRect(0, 0, 80, 20);
+    userCountBG.endFill();
+    userCountBG.zIndex = 3;
+
+    this.mUserCount = new PIXI.Text(`접속자 수: ${this.clientsCount} 명`, {
+      fontSize: 12,
+      fontWeight: 'bold',
+      letterSpacing: -1,
+    });
+    userCountBG.addChild(this.mUserCount);
+
+    this.addChild(this.mMapLayout, this.mCharacterLayout, userCountBG);
     await rscManager.getHandle.loadAllRsc(bomberConfig.rscList);
     await this.createObject();
     await this.registAnimationFrame();

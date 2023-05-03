@@ -28,11 +28,18 @@ export interface TypeInitSocketData {
   socketId: string;
   users: TypeBomberSocket[];
   mapData: number[][];
+  clientsCount: number;
+}
+
+export interface TypeLeaveUser {
+  socketId: string;
+  clientsCount: number;
 }
 
 export interface TypeIncomingUserSocket {
   socketId: string;
   pos: number[];
+  clientsCount: number;
 }
 
 export interface TypeBomberSocket {
