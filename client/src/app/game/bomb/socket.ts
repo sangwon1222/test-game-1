@@ -22,7 +22,11 @@ export class SocketIo {
   constructor(scene: BomBerScene) {
     this.socketOn = new OnEvent(scene);
 
-    this.socket = io('http://lsw.kr:3000', {});
+    const link =
+      process.env.NODE_ENV === 'production'
+        ? 'http://lsw.kr:3000'
+        : 'localhost:3000';
+    this.socket = io(link, {});
   }
 
   async init() {

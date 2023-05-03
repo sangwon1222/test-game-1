@@ -1,5 +1,10 @@
 import config from '../bomb/bomberConfig';
 
+export const color = [
+  0xf92121 /**빨강 */, 0xff8f29 /**주황 */, 0xffe424 /**황토 */,
+  0x23cc23 /**녹색 */, 0x2da2ea /**파랑 */, 0x8a4dff /**보라 */,
+];
+
 export const util = {
   getCanvasPos(metrixX: number, metrixY: number) {
     const x = Math.round(metrixX / config.tileScale) * config.tileScale;

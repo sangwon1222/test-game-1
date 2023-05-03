@@ -29,7 +29,6 @@ export default class BomBer extends PIXI.Container {
   }
 
   get invalidBomb(): boolean {
-    console.log(this.mFixBombCnt, this.mUseBombCnt);
     return this.mFixBombCnt <= this.mUseBombCnt;
   }
 
