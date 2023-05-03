@@ -9,7 +9,6 @@ import {
 } from '../common';
 import config from './bomberConfig';
 import { Bomb, Fire } from './bomb';
-import { readFileSync } from 'fs';
 import BomBerScene from './scene';
 import { gsap } from 'gsap';
 import BomBer from './bomber';
@@ -22,11 +21,8 @@ export class SocketIo {
 
   constructor(scene: BomBerScene) {
     this.socketOn = new OnEvent(scene);
-    this.socket = io('https://lsw.kr', {
-      key: readFileSync('/app/certicates/privkey.pem'),
-      cert: readFileSync('/app/certicates/cert.pem'),
-      ca: [readFileSync('/app/certicates/chain.pem')],
-    } as any);
+
+    this.socket = io('http://lsw.kr:3000', {});
   }
 
   async init() {
