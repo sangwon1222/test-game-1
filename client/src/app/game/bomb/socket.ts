@@ -24,7 +24,7 @@ export class SocketIo {
 
     const link =
       process.env.NODE_ENV === 'production'
-        ? 'http://lsw.kr:3000'
+        ? 'http://www.lsw.kr:3000'
         : 'localhost:3000';
     this.socket = io(link, {});
   }
