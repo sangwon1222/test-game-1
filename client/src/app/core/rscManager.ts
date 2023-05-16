@@ -43,8 +43,7 @@ export class rscManager {
     common?: boolean,
     sceneName?: string
   ) {
-    const currentSceneName =
-      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
+    const currentSceneName = Application.getHandle.getScene.sceneInfo.sceneName;
     const scene = sceneName ? sceneName : currentSceneName;
     const rscKey = common ? `common/${key}` : `${scene}/${key}`;
 
@@ -58,8 +57,7 @@ export class rscManager {
    * @description 배열로 리소스 리스트를 보내주면 모든 리소스 로드하는 함수
    */
   public async loadAllRsc(rscInfoAry: TypeSrcInfo[]) {
-    const sceneName =
-      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
+    const sceneName = Application.getHandle.getScene.sceneInfo.sceneName;
     for (const { key, src, common } of rscInfoAry) {
       await this.loadRsc(key, src, common, sceneName);
     }
@@ -71,8 +69,7 @@ export class rscManager {
    * @returns
    */
   public getRsc(srcKey: string, common?: boolean) {
-    const sceneName =
-      Application.getHandle.getSceneManager?.currentSceneInfo?.sceneName;
+    const sceneName = Application.getHandle.getScene.sceneInfo.sceneName;
     const key = common ? `common/${srcKey}` : `${sceneName}/${srcKey}`;
 
     return this.mRscArry[key];

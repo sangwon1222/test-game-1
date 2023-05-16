@@ -34,5 +34,9 @@ export default {
     { key: 'cha-up.gif', src: 'rsc/img/cha-up.gif' },
     { key: 'cha-down.gif', src: 'rsc/img/cha-down.gif' },
     { key: 'cha-bombing.gif', src: 'rsc/img/cha-bombing.gif' },
+
+    // spine
+    { key: 'common_intro.json', src: 'rsc/img/common_intro.json' },
+    { key: 'Hello.json', src: 'rsc/img/Hello.json' },
   ],
 };

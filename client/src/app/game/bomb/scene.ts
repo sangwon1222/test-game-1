@@ -11,6 +11,7 @@ import * as PIXI from 'pixi.js';
 import canvasConfig from '@/app/canvasConfig';
 import Application from '@/app/core/application';
 import { gsap } from 'gsap';
+import { Spine } from 'pixi-spine';
 
 export default class BomBerScene extends Scene {
   private mLogs: { [key: string]: boolean };
@@ -120,6 +121,13 @@ export default class BomBerScene extends Scene {
       this.mMe.isMoving = false;
       this.mSocket.emit('updateUsersPos');
     };
+
+    const spinedata = rscManager.getHandle.getRsc('Hello.json');
+    const helloSpine = new Spine(spinedata.spineData);
+    this.addChild(helloSpine);
+    helloSpine.zIndex = 100;
+    helloSpine.position.set(canvasConfig.width / 2, canvasConfig.height / 2);
+    helloSpine.state.setAnimation(0, '01', true);
   }
 
   async registAnimationFrame() {

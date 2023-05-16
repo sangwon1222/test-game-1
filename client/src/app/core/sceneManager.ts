@@ -11,10 +11,6 @@ export default class SceneManager extends PIXI.Container {
     return this.sceneAry[this.sceneIdx];
   }
 
-  get currentSceneInfo() {
-    return this.sceneAry[this.sceneIdx].sceneInfo;
-  }
-
   constructor() {
     super();
 

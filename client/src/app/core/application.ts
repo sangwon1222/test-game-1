@@ -3,6 +3,7 @@ import SceneManager from '@core/sceneManager';
 import ModalManager from '@core/modalManager';
 import config from '../canvasConfig';
 import Scene from './scene';
+import 'pixi-spine';
 
 const params = {
   backgroundColor: config.background,
